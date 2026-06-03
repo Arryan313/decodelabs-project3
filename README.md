@@ -10,21 +10,6 @@
 
 ---
 
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Database Schema](#database-schema)
-- [Installation](#installation)
-- [Running the App](#running-the-app)
-- [Project Structure](#project-structure)
-- [API Endpoints](#api-endpoints)
-- [Screenshots](#screenshots)
-- [Interview Preparation](#interview-preparation)
-
----
-
 ## 🎯 Overview
 
 This project demonstrates **Database Integration** - connecting a Flask backend with a SQLite database to perform full CRUD (Create, Read, Update, Delete) operations. It includes:
