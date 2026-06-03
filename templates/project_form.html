@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{% if project %}Edit{% else %}Create{% endif %} Project | DecodeLabs Project 3{% endblock %}
+{% block page_title %}{% if project %}Edit Project{% else %}Create New Project{% endif %}{% endblock %}
+{% block page_subtitle %}{% if project %}Update your project details{% else %}Start a new project journey{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="card form-card">
+        <div class="card-header">
+            <h3><i class="fas fa-{% if project %}edit{% else %}plus-circle{% endif %}"></i> {% if project %}Edit "{{ project.title }}"{% else %}Project Information{% endif %}</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="project-form">
+                <!-- Title -->
+                <div class="form-group">
+                    <label for="title">Project Title <span class="required">*</span></label>
+                    <input type="text" id="title" name="title" value="{{ project.title if project else '' }}" 
+                           placeholder="Enter project name" required>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="description">Description <span class="required">*</span></label>
+                    <textarea id="description" name="description" rows="4" 
+                              placeholder="Describe your project..." required>{{ project.description if project else '' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <!-- Category -->
+                    <div class="form-group">
+                        <label for="category">Category <span class="required">*</span></label>
+                        <select id="category" name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="Web Application" {% if project and project.category == 'Web Application' %}selected{% endif %}>Web Application</option>
+                            <option value="Mobile App" {% if project and project.category == 'Mobile App' %}selected{% endif %}>Mobile App</option>
+                            <option value="AI/ML" {% if project and project.category == 'AI/ML' %}selected{% endif %}>AI/ML</option>
+                            <option value="Analytics" {% if project and project.category == 'Analytics' %}selected{% endif %}>Analytics</option>
+                            <option value="Productivity" {% if project and project.category == 'Productivity' %}selected{% endif %}>Productivity</option>
+                            <option value="E-Commerce" {% if project and project.category == 'E-Commerce' %}selected{% endif %}>E-Commerce</option>
+                            <option value="Other" {% if project and project.category == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="In Progress" {% if project and project.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Completed" {% if project and project.status == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="On Hold" {% if project and project.status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                            <option value="Review" {% if project and project.status == 'Review' %}selected{% endif %}>Review</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <!-- Priority -->
+                    <div class="form-group">
+                        <label for="priority">Priority</label>
+                        <select id="priority" name="priority">
+                            <option value="Low" {% if project and project.priority == 'Low' %}selected{% endif %}>Low</option>
+                            <option value="Medium" {% if project and project.priority == 'Medium' %}selected{% endif %}>Medium</option>
+                            <option value="High" {% if project and project.priority == 'High' %}selected{% endif %}>High</option>
+                            <option value="Critical" {% if project and project.priority == 'Critical' %}selected{% endif %}>Critical</option>
+                        </select>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="form-group">
+                        <label for="progress">Progress (%)</label>
+                        <div class="progress-input-group">
+                            <input type="range" id="progressRange" min="0" max="100" value="{{ project.progress if project else 0 }}" 
+                                   oninput="document.getElementById('progress').value = this.value; document.getElementById('progressValue').textContent = this.value + '%';">
+                            <input type="number" id="progress" name="progress" min="0" max="100" value="{{ project.progress if project else 0 }}"
+                                   oninput="document.getElementById('progressRange').value = this.value; document.getElementById('progressValue').textContent = this.value + '%';">
+                            <span id="progressValue">{{ project.progress if project else 0 }}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GitHub URL -->
+                <div class="form-group">
+                    <label for="github_url">GitHub Repository URL</label>
+                    <input type="url" id="github_url" name="github_url" value="{{ project.github_url if project else '' }}"
+                           placeholder="https://github.com/username/repo">
+                </div>
+
+                <!-- Tech Stack -->
+                <div class="form-group">
+                    <label for="tech_stack">Tech Stack (comma separated)</label>
+                    <input type="text" id="tech_stack" name="tech_stack" value="{{ project.tech_stack if project else '' }}"
+                           placeholder="Python, Flask, React, PostgreSQL">
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-{% if project %}save{% else %}plus{% endif %}"></i>
+                        {% if project %}Save Changes{% else %}Create Project{% endif %}
+                    </button>
+                    <a href="{{ url_for('projects_list') }}" class="btn btn-outline btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

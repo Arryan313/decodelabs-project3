@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Interns | DecodeLabs Project 3{% endblock %}
+{% block page_title %}Team Members{% endblock %}
+{% block page_subtitle %}Manage intern profiles and team roster{% endblock %}
+
+{% block content %}
+<!-- Add Intern Form -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-user-plus"></i> Add New Intern</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('intern_create') }}" class="inline-form-row">
+            <div class="form-group">
+                <input type="text" name="name" placeholder="Full Name" required>
+            </div>
+            <div class="form-group">
+                <input type="email" name="email" placeholder="Email Address" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="role" placeholder="Role (e.g., Full Stack Developer)">
+            </div>
+            <div class="form-group flex-2">
+                <input type="text" name="skills" placeholder="Skills (comma separated)">
+            </div>
+            <div class="form-group flex-2">
+                <input type="text" name="bio" placeholder="Short bio">
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Intern
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Interns Grid -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-users"></i> All Team Members</h3>
+        <span class="badge-count">{{ interns | length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="interns-table-container">
+            <div class="table-responsive">
+                <table class="data-table interns-table">
+                    <thead>
+                        <tr>
+                            <th>Intern</th>
+                            <th>Role</th>
+                            <th>Skills</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for intern in interns %}
+                        <tr>
+                            <td>
+                                <div class="intern-cell">
+                                    <div class="intern-avatar-sm">{{ intern.name[0] }}</div>
+                                    <div class="intern-cell-info">
+                                        <span class="intern-name">{{ intern.name }}</span>
+                                        <span class="intern-email">{{ intern.email }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ intern.role or 'Intern' }}</td>
+                            <td>
+                                <div class="skills-inline">
+                                    {% for skill in (intern.skills or '').split(',')[:3] %}
+                                        {% if skill.strip() %}
+                                        <span class="skill-tag-sm">{{ skill.strip() }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge {% if intern.is_active %}active{% else %}inactive{% endif %}">
+                                    <span class="status-dot-sm"></span>
+                                    {% if intern.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ intern.joined_at.strftime('%b %d, %Y') }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" onclick="editIntern({{ intern.id }}, '{{ intern.name }}', '{{ intern.email }}', '{{ intern.role or '' }}', '{{ intern.skills or '' }}', '{{ intern.bio or '' }}', {{ intern.is_active | tojson }})" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form action="{{ url_for('intern_delete', id=intern.id) }}" method="POST" class="inline-form" onsubmit="return confirm('Remove this intern?');">
+                                        <button type="submit" class="btn-icon btn-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-table">
+                                <i class="fas fa-users"></i>
+                                <p>No interns added yet</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Intern Modal -->
+<div id="editInternModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Intern Profile</h3>
+            <button class="modal-close" onclick="closeInternModal()">&times;</button>
+        </div>
+        <form id="editInternForm" method="POST" class="modal-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="editInternName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="editInternEmail" name="email" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <input type="text" id="editInternRole" name="role">
+            </div>
+            <div class="form-group">
+                <label>Skills</label>
+                <input type="text" id="editInternSkills" name="skills" placeholder="Comma separated">
+            </div>
+            <div class="form-group">
+                <label>Bio</label>
+                <textarea id="editInternBio" name="bio" rows="2"></textarea>
+            </div>
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="editInternActive" name="is_active">
+                    <span>Active Member</span>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-outline" onclick="closeInternModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editIntern(id, name, email, role, skills, bio, isActive) {
+    const form = document.getElementById('editInternForm');
+    form.action = '/interns/' + id + '/update';
+    document.getElementById('editInternName').value = name;
+    document.getElementById('editInternEmail').value = email;
+    document.getElementById('editInternRole').value = role;
+    document.getElementById('editInternSkills').value = skills;
+    document.getElementById('editInternBio').value = bio;
+    document.getElementById('editInternActive').checked = isActive;
+    document.getElementById('editInternModal').style.display = 'flex';
+}
+
+function closeInternModal() {
+    document.getElementById('editInternModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('editInternModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

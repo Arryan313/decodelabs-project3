@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks | DecodeLabs Project 3{% endblock %}
+{% block page_title %}Tasks{% endblock %}
+{% block page_subtitle %}Manage and track project tasks{% endblock %}
+
+{% block content %}
+<!-- Add Task Form -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-plus-circle"></i> Add New Task</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('task_create') }}" class="inline-form-row">
+            <div class="form-group flex-2">
+                <input type="text" name="title" placeholder="Task title..." required>
+            </div>
+            <div class="form-group flex-2">
+                <input type="text" name="description" placeholder="Description (optional)">
+            </div>
+            <div class="form-group">
+                <select name="project_id" required>
+                    <option value="">Select Project</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}">{{ project.title[:30] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <select name="priority">
+                    <option value="Low">Low</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Task
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-bar">
+    <div class="filter-group">
+        <label>Filter by Status:</label>
+        <div class="filter-pills">
+            <a href="{{ url_for('tasks_list') }}" class="filter-pill {% if not current_status %}active{% endif %}">All</a>
+            {% for status in statuses %}
+            <a href="{{ url_for('tasks_list', status=status) }}" class="filter-pill {% if current_status == status %}active{% endif %}">{{ status }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Tasks List -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-tasks"></i> All Tasks</h3>
+        <span class="badge-count">{{ tasks.total }}</span>
+    </div>
+    <div class="card-body">
+        <div class="tasks-container">
+            {% for task in tasks.items %}
+            <div class="task-card {% if task.status == 'Completed' %}completed{% endif %}">
+                <div class="task-main">
+                    <div class="task-status">
+                        <form method="POST" action="{{ url_for('task_update', id=task.id) }}" class="status-toggle-form">
+                            <input type="hidden" name="title" value="{{ task.title }}">
+                            <input type="hidden" name="description" value="{{ task.description or '' }}">
+                            <input type="hidden" name="priority" value="{{ task.priority }}">
+                            <button type="submit" name="status" value="{% if task.status == 'Completed' %}Pending{% else %}Completed{% endif %}" 
+                                    class="status-toggle" title="Toggle status">
+                                {% if task.status == 'Completed' %}
+                                <i class="fas fa-check-circle text-success"></i>
+                                {% else %}
+                                <i class="far fa-circle"></i>
+                                {% endif %}
+                            </button>
+                        </form>
+                    </div>
+                    <div class="task-info">
+                        <h4 {% if task.status == 'Completed' %}class="completed"{% endif %}>{{ task.title }}</h4>
+                        <p>{{ task.description or 'No description' }}</p>
+                        <div class="task-meta">
+                            <span class="badge-status status-{{ task.status.lower().replace(' ', '-') }}">{{ task.status }}</span>
+                            <span class="badge-priority priority-{{ task.priority.lower() }}">{{ task.priority }}</span>
+                            <span class="task-project"><i class="fas fa-folder"></i> {{ task.project.title[:25] }}</span>
+                            <span class="task-date"><i class="fas fa-clock"></i> {{ task.created_at.strftime('%b %d') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <button class="btn-icon" onclick="editTask({{ task.id }}, '{{ task.title }}', '{{ task.description or '' }}', '{{ task.status }}', '{{ task.priority }}', {{ task.project_id }})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <form action="{{ url_for('task_delete', id=task.id) }}" method="POST" class="inline-form" onsubmit="return confirm('Delete this task?');">
+                        <button type="submit" class="btn-icon btn-danger" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-tasks"></i>
+                <h3>No Tasks Yet</h3>
+                <p>Add your first task above</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if tasks.pages > 1 %}
+<div class="pagination">
+    {% if tasks.has_prev %}
+    <a href="{{ url_for('tasks_list', page=tasks.prev_num, status=current_status) }}" class="page-btn">
+        <i class="fas fa-chevron-left"></i> Previous
+    </a>
+    {% endif %}
+    <span class="page-info">Page {{ tasks.page }} of {{ tasks.pages }}</span>
+    {% if tasks.has_next %}
+    <a href="{{ url_for('tasks_list', page=tasks.next_num, status=current_status) }}" class="page-btn">
+        Next <i class="fas fa-chevron-right"></i>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Edit Task Modal -->
+<div id="editTaskModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Task</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="editTaskForm" method="POST" class="modal-form">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="editTitle" name="title" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="editDescription" name="description" rows="3"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="editStatus" name="status">
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Blocked">Blocked</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select id="editPriority" name="priority">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editTask(id, title, description, status, priority, projectId) {
+    const form = document.getElementById('editTaskForm');
+    form.action = '/tasks/' + id + '/update';
+    document.getElementById('editTitle').value = title;
+    document.getElementById('editDescription').value = description;
+    document.getElementById('editStatus').value = status;
+    document.getElementById('editPriority').value = priority;
+    document.getElementById('editTaskModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('editTaskModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('editTaskModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

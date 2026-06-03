@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DecodeLabs Project 3 - Database Integration{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-brand">DecodeLabs</span>
+                    <span class="logo-sub">Project 3</span>
+                </div>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <span class="nav-label">Main</span>
+                <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-label">Management</span>
+                <a href="{{ url_for('projects_list') }}" class="nav-item {% if request.endpoint in ['projects_list', 'project_detail', 'project_create', 'project_edit'] %}active{% endif %}">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Projects</span>
+                    <span class="badge">{{ total_projects }}</span>
+                </a>
+                <a href="{{ url_for('tasks_list') }}" class="nav-item {% if request.endpoint in ['tasks_list'] %}active{% endif %}">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tasks</span>
+                    <span class="badge">{{ total_tasks }}</span>
+                </a>
+                <a href="{{ url_for('interns_list') }}" class="nav-item {% if request.endpoint in ['interns_list'] %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Interns</span>
+                    <span class="badge">{{ total_interns }}</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-label">API</span>
+                <a href="/api/projects" target="_blank" class="nav-item">
+                    <i class="fas fa-plug"></i>
+                    <span>API Projects</span>
+                </a>
+                <a href="/api/stats" target="_blank" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>API Stats</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="batch-badge">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Batch 2026</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                <p class="page-subtitle">{% block page_subtitle %}Welcome to your project workspace{% endblock %}</p>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <a href="{{ url_for('project_create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        <span>New Project</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}" id="flash-{{ loop.index }}">
+                            <span>{{ message }}</span>
+                            <button onclick="document.getElementById('flash-{{ loop.index }}').remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Content Area -->
+        <div class="content-area">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

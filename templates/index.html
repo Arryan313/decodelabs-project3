@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | DecodeLabs Project 3{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Overview of your project workspace{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card stat-primary">
+        <div class="stat-icon">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ total_projects }}</span>
+            <span class="stat-label">Total Projects</span>
+        </div>
+        <div class="stat-trend">
+            <i class="fas fa-arrow-up"></i>
+            <span>Active</span>
+        </div>
+    </div>
+
+    <div class="stat-card stat-success">
+        <div class="stat-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ completed_projects }}</span>
+            <span class="stat-label">Completed</span>
+        </div>
+        <div class="stat-trend">
+            <i class="fas fa-trophy"></i>
+            <span>Done</span>
+        </div>
+    </div>
+
+    <div class="stat-card stat-warning">
+        <div class="stat-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ total_tasks }}</span>
+            <span class="stat-label">Total Tasks</span>
+        </div>
+        <div class="stat-trend">
+            <i class="fas fa-clock"></i>
+            <span>Tracked</span>
+        </div>
+    </div>
+
+    <div class="stat-card stat-info">
+        <div class="stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-value">{{ total_interns }}</span>
+            <span class="stat-label">Interns</span>
+        </div>
+        <div class="stat-trend">
+            <i class="fas fa-user-plus"></i>
+            <span>Team</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts & Recent Activity -->
+<div class="dashboard-grid">
+    <!-- Project Status Chart -->
+    <div class="card chart-card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-pie"></i> Project Status Distribution</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="statusChart" height="250"></canvas>
+        </div>
+    </div>
+
+    <!-- Category Chart -->
+    <div class="card chart-card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-bar"></i> Projects by Category</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="categoryChart" height="250"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="dashboard-grid">
+    <!-- Recent Projects -->
+    <div class="card activity-card">
+        <div class="card-header">
+            <h3><i class="fas fa-folder-open"></i> Recent Projects</h3>
+            <a href="{{ url_for('projects_list') }}" class="link">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="activity-list">
+                {% for project in recent_projects %}
+                <div class="activity-item">
+                    <div class="activity-icon bg-{{ loop.index % 4 + 1 }}">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h4>{{ project.title }}</h4>
+                        <p>{{ project.description[:80] }}...</p>
+                        <div class="activity-meta">
+                            <span class="badge-status status-{{ project.status.lower().replace(' ', '-') }}">{{ project.status }}</span>
+                            <span class="time"><i class="fas fa-clock"></i> {{ project.created_at.strftime('%b %d') }}</span>
+                        </div>
+                    </div>
+                    <div class="activity-progress">
+                        <div class="progress-ring" data-progress="{{ project.progress }}">
+                            <svg viewBox="0 0 36 36">
+                                <path class="progress-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                <path class="progress-bar" stroke-dasharray="{{ project.progress }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            </svg>
+                            <span class="progress-text">{{ project.progress }}%</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <p>No projects yet. Create your first project!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="card activity-card">
+        <div class="card-header">
+            <h3><i class="fas fa-tasks"></i> Recent Tasks</h3>
+            <a href="{{ url_for('tasks_list') }}" class="link">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="activity-list">
+                {% for task in recent_tasks %}
+                <div class="activity-item task-item">
+                    <div class="task-checkbox">
+                        <input type="checkbox" {% if task.status == 'Completed' %}checked{% endif %} disabled>
+                    </div>
+                    <div class="activity-content">
+                        <h4 {% if task.status == 'Completed' %}class="completed"{% endif %}>{{ task.title }}</h4>
+                        <p>{{ task.description[:60] }}...</p>
+                        <div class="activity-meta">
+                            <span class="badge-status status-{{ task.status.lower().replace(' ', '-') }}">{{ task.status }}</span>
+                            <span class="badge-priority priority-{{ task.priority.lower() }}">{{ task.priority }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tasks"></i>
+                    <p>No tasks yet. Add your first task!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+    <div class="actions-grid">
+        <a href="{{ url_for('project_create') }}" class="action-card">
+            <div class="action-icon">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <span>New Project</span>
+        </a>
+        <a href="{{ url_for('projects_list') }}" class="action-card">
+            <div class="action-icon">
+                <i class="fas fa-list"></i>
+            </div>
+            <span>View Projects</span>
+        </a>
+        <a href="{{ url_for('tasks_list') }}" class="action-card">
+            <div class="action-icon">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <span>Manage Tasks</span>
+        </a>
+        <a href="{{ url_for('interns_list') }}" class="action-card">
+            <div class="action-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <span>Add Intern</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Status Chart
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ status_counts | map(attribute=0) | list | tojson }},
+        datasets: [{
+            data: {{ status_counts | map(attribute=1) | list | tojson }},
+            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
+            borderWidth: 0,
+            hoverOffset: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 20, usePointStyle: true }
+            }
+        },
+        cutout: '70%'
+    }
+});
+
+// Category Chart
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+new Chart(categoryCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ category_counts | map(attribute=0) | list | tojson }},
+        datasets: [{
+            label: 'Projects',
+            data: {{ category_counts | map(attribute=1) | list | tojson }},
+            backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'],
+            borderRadius: 8,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.05)' },
+                ticks: { stepSize: 1 }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
